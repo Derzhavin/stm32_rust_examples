@@ -1,0 +1,4 @@
+arm-none-eabi-gdb -ex "target extended-remote localhost:3333" -ex "monitor reset halt" -ex "monitor arm semihosting enable"
+
+
+openocd -f openocd/stm32f4x.cfg
