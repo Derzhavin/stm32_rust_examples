@@ -1,0 +1,28 @@
+[package]
+name = "serial_hal"
+version = "0.1.0"
+authors = ["Derzhavin <derzhavind@bk.ru>"]
+edition = "2021"
+
+[dependencies]
+embedded-hal = "0.2"
+nb = "1"
+cortex-m = "0.7"
+cortex-m-rt = "0.7"
+# Panic behaviour, see https://crates.io/keywords/panic-impl for alternatives
+panic-halt = "0.2"
+
+[dependencies.stm32f4xx-hal]
+version = "0.20.0"
+features = ["stm32f446", "defmt", ]
+
+# Set the default for dependencies.
+[profile.dev.package."*"]
+opt-level = "s"
+
+[profile.release]
+codegen-units = 1
+incremental = false
+debug = true
+lto = true
+opt-level = "s"
