@@ -1,20 +1,55 @@
 #![no_std]
 #![no_main]
 
-// pick a panicking behavior
 use panic_halt as _; // you can put a breakpoint on `rust_begin_unwind` to catch panics
-// use panic_abort as _; // requires nightly
-// use panic_itm as _; // logs messages over ITM; requires ITM support
-// use panic_semihosting as _; // logs messages to the host stderr; requires a debugger
 
-use cortex_m::asm;
 use cortex_m_rt::entry;
+
+use stm32f4xx_hal::{
+    pac::{self},
+    prelude::*,
+    spi::{Mode, NoMiso, Phase, Polarity},
+    gpio::Speed,
+    spi::*,
+};
 
 #[entry]
 fn main() -> ! {
-    asm::nop(); // To not have main optimize to abort in release mode, remove when you add code
+    let dp = pac::Peripherals::take().unwrap();
+
+    let rcc = dp.RCC.constrain();
+    let clocks = rcc.cfgr.freeze();
+
+    let gpiob = dp.GPIOB.split();
+
+    let sclk = gpiob
+        .pb13
+        .into_alternate()
+        .speed(Speed::VeryHigh)
+        .internal_pull_up(true);
+
+    let mosi = gpiob
+        .pb15
+        .into_alternate()
+        .speed(Speed::VeryHigh);
+
+    let mut cs = gpiob.pb1.into_push_pull_output();
+
+    let mode = Mode {
+        polarity: Polarity::IdleLow,
+        phase: Phase::CaptureOnFirstTransition,
+    };
+
+    let mut spi = Spi::new(dp.SPI2, (sclk, NoMiso::new(), mosi), mode, 200.kHz(), &clocks);
+
+    let mut delay = dp.TIM1.delay_ms(&clocks);
 
     loop {
-        // your code goes here
+        cs.set_low();
+        let spi_send_data: [u8; 5] = [0x0A, 0x0B, 0x0C, 0x0D, 0x0E];
+        spi.write(&spi_send_data).unwrap();
+        cs.set_high();
+
+        delay.delay_ms(100);
     }
 }
